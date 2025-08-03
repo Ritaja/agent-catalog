@@ -1,0 +1,23 @@
+# Dockerfile for Ollama with phi4-mini model
+FROM ollama/ollama:latest
+
+# Set environment variables
+ENV OLLAMA_HOST=0.0.0.0
+ENV OLLAMA_PORT=11434
+
+# Create directory for models
+RUN mkdir -p /root/.ollama
+
+# Copy startup script
+COPY azure/scripts/ollama-startup.sh /usr/local/bin/ollama-startup.sh
+RUN chmod +x /usr/local/bin/ollama-startup.sh
+
+# Expose port
+EXPOSE 11434
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD curl -f http://localhost:11434/api/version || exit 1
+
+# Use startup script as entrypoint
+ENTRYPOINT ["/usr/local/bin/ollama-startup.sh"]

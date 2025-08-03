@@ -1,0 +1,36 @@
+# Development overrides for docker-compose.yml
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+  backend:
+    volumes:
+      - ./backend:/app
+      - /app/__pycache__  # Exclude cache directory
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONDONTWRITEBYTECODE=1
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--reload-dir", "/app"]
+
+  frontend:
+    # Development mode with Vite dev server
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      target: development
+    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "3000"]
+    ports:
+      - "3000:3000"  # Vite dev server port
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules  # Exclude node_modules
+    environment:
+      - NODE_ENV=development
+      - DOCKER_ENV=true
+
+  sample-agents:
+    volumes:
+      - ./sample-agents:/app
+      - /app/__pycache__  # Exclude cache directory
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONDONTWRITEBYTECODE=1

@@ -54,7 +54,7 @@ events_tool = Tool.from_function(
 # Initialize ChatOllama LLM
 # type: ignore
 llm = ChatOllama(model='phi4-mini',
-                 base_url='http://host.docker.internal:11434')
+                 base_url='http://ollama:11434')
 
 # Initialize the agent with the events tool
 agent_executor: AgentExecutor = initialize_agent(

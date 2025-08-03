@@ -40,3 +40,22 @@ yarn-error.log*
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Environment Variables (contains secrets)
+.env
+backend/.env
+
+# Docker volumes and data
+docker-volumes/
+*.tar.gz
+
+# Terraform
+*.tfstate
+*.tfstate.*
+*.tfvars
+.terraform/
+.terraform.lock.hcl
+tfplan*
+
+# Azure CLI
+.azure/
