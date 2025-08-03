@@ -9,6 +9,7 @@ This project is a web-based catalog for discovering and managing various agents.
 - [🏗️ Architecture & API Flow](#️-architecture--api-flow)
 - [🚀 Quick Start with Docker](#-quick-start-with-docker)
 - [📁 Project Structure](#-project-structure)
+- [🤖 Ollama Setup (Required for Sample Agents)](#-ollama-setup-required-for-sample-agents)
 - [⚙️ Manual Setup (Development)](#️-manual-setup-development)
 - [🐳 Docker Setup](#-docker-setup)
 - [🗄️ Database Configuration](#️-database-configuration)
@@ -192,6 +193,11 @@ The easiest way to run the entire project is using Docker:
 git clone https://github.com/your-username/agent-catalog.git
 cd agent-catalog
 
+# Setup Ollama (Required for Sample Agents)
+# See the 🤖 Ollama Setup section below for detailed installation
+ollama serve
+ollama pull phi4-mini
+
 # Quick setup with Docker
 ./setup.sh
 
@@ -240,6 +246,116 @@ agent-catalog/
 └── Makefile                    # Convenience commands for Docker operations
 ```
 
+## 🤖 Ollama Setup (Required for Sample Agents)
+
+The sample agents use Ollama with the `phi4-mini` model for natural language processing. You need to install and configure Ollama before running the agents.
+
+### Installation
+
+#### **macOS**
+
+```bash
+# Install using Homebrew
+brew install ollama
+
+# Or download from official website
+curl -fsSL https://ollama.ai/install.sh | sh
+```
+
+#### **Linux**
+
+```bash
+# Install using the official script
+curl -fsSL https://ollama.ai/install.sh | sh
+
+# Or manually download and install
+# Visit https://ollama.ai/download for platform-specific installers
+```
+
+#### **Windows**
+
+```bash
+# Download the installer from https://ollama.ai/download
+# Run the .exe installer and follow the setup wizard
+```
+
+#### **Docker (Alternative)**
+
+```bash
+# Run Ollama in Docker container
+docker run -d \
+  --name ollama \
+  -p 11434:11434 \
+  -v ollama:/root/.ollama \
+  ollama/ollama
+
+# Then exec into the container to pull models
+docker exec -it ollama ollama pull phi4-mini
+```
+
+### Configuration
+
+1. **Start Ollama Service:**
+
+   ```bash
+   # On macOS/Linux (if installed via package manager)
+   ollama serve
+
+   # The service will start on http://localhost:11434
+   ```
+
+2. **Pull the phi4-mini Model:**
+
+   ```bash
+   # Download and install the phi4-mini model
+   ollama pull phi4-mini
+
+   # Verify the model is installed
+   ollama list
+   ```
+
+3. **Test the Installation:**
+
+   ```bash
+   # Test that the model works
+   ollama run phi4-mini "Hello, how are you?"
+
+   # You should see a response from the model
+   ```
+
+### Docker Environment Configuration
+
+If you're running the project in Docker, the sample agents are configured to connect to Ollama on the host machine:
+
+```python
+# Sample agents use this configuration
+llm = ChatOllama(
+    model='phi4-mini',
+    base_url='http://host.docker.internal:11434'  # Connects to host Ollama
+)
+```
+
+### Troubleshooting
+
+- **Connection Issues**: Ensure Ollama is running on port 11434
+- **Model Not Found**: Run `ollama pull phi4-mini` to download the model
+- **Docker Connectivity**: Use `host.docker.internal:11434` for Docker environments
+- **Performance**: phi4-mini requires at least 4GB RAM for optimal performance
+
+### Alternative Models
+
+You can use other Ollama models by modifying the agent configuration:
+
+```python
+# In sample-agents/*/agent.py, change the model:
+llm = ChatOllama(
+    model='llama3.2',        # or 'codellama', 'mistral', etc.
+    base_url='http://host.docker.internal:11434'
+)
+```
+
+Available models: `ollama list` or visit [Ollama Model Library](https://ollama.ai/library)
+
 ## ⚙️ Manual Setup (Development)
 
 ### Prerequisites
@@ -249,6 +365,7 @@ Make sure you have the following installed:
 - Python 3.8+ and pip
 - Node.js and npm
 - Docker (optional, for containerized setup)
+- **Ollama** (required for sample agents) - see [🤖 Ollama Setup](#-ollama-setup-required-for-sample-agents)
 
 ### Installation & Running
 
