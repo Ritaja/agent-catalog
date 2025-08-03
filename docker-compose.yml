@@ -1,0 +1,101 @@
+services:
+  # Backend service
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: agent-catalog-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - COSMOS_ENDPOINT=${COSMOS_ENDPOINT:-}
+      - COSMOS_KEY=${COSMOS_KEY:-}
+      - COSMOS_DATABASE_NAME=${COSMOS_DATABASE_NAME:-agent-catalog}
+      - COSMOS_AGENTS_CONTAINER=${COSMOS_AGENTS_CONTAINER:-agents}
+      - COSMOS_CONFIG_CONTAINER=${COSMOS_CONFIG_CONTAINER:-configuration}
+    volumes:
+      - ./backend:/app:ro
+      - ./backend/.env:/app/.env:ro
+    restart: unless-stopped
+    networks:
+      - agent-catalog-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/agents"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Frontend service
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      target: production
+    container_name: agent-catalog-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - agent-catalog-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Sample agents service
+  sample-agents:
+    build:
+      context: .
+      dockerfile: Dockerfile.sample-agents
+    container_name: agent-catalog-sample-agents
+    ports:
+      - "5051:5051"  # Task agent
+      - "5052:5052"  # Calendar agent
+      - "5053:5053"  # Finance agent
+    depends_on:
+      - ollama
+    restart: unless-stopped
+    networks:
+      - agent-catalog-network
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f 'agent.py' > /dev/null || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Ollama service for AI models
+  ollama:
+    build:
+      context: .
+      dockerfile: Dockerfile.ollama
+    container_name: agent-catalog-ollama
+    ports:
+      - "11434:11434"
+    restart: unless-stopped
+    networks:
+      - agent-catalog-network
+    volumes:
+      - ollama-data:/root/.ollama
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/version"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+
+networks:
+  agent-catalog-network:
+    driver: bridge
+
+# Optional: Add volumes for data persistence
+volumes:
+  backend-data:
+    driver: local
+  ollama-data:
+    driver: local

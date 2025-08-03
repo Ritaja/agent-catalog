@@ -2,6 +2,7 @@
 	"name": "Agent Catalog Dev Container",
 	"image": "mcr.microsoft.com/devcontainers/base:noble",
 	"workspaceFolder": "/workspaces/agent-catalog",
+	// Features included: Docker, Node.js, Python, Azure CLI, Terraform, and common utilities
 	"features": {
 		"ghcr.io/devcontainers/features/docker-in-docker:2": {},
 		"ghcr.io/devcontainers/features/node:1": {
@@ -10,6 +11,9 @@
 		"ghcr.io/devcontainers/features/python:1": {
 			"version": "3.12"
 		},
+		"ghcr.io/devcontainers/features/azure-cli:1": {
+			"version": "latest"
+		},
 		"ghcr.io/devcontainers/features/common-utils:2": {
 			"installZsh": true,
 			"configureZshAsDefaultShell": true,
@@ -17,14 +21,22 @@
       "upgradePackages": true
 		}
 	},
-	"postCreateCommand": "sed -i 's/ZSH_THEME=\\\"robbyrussell\\\"/ZSH_THEME=\\\"agnoster\\\"/' ~/.zshrc && pip3 install -r backend/requirements.txt && pip3 install -r sample-agents/requirements.txt",
+	"postCreateCommand": "chmod +x .devcontainer/setup-azure.sh && .devcontainer/setup-azure.sh && sed -i 's/ZSH_THEME=\"robbyrussell\"/ZSH_THEME=\"agnoster\"/' ~/.zshrc && pip3 install -r backend/requirements.txt && pip3 install -r sample-agents/requirements.txt && echo 'Dev container setup complete! You need to install terraform and then Run azure-quickstart.sh to get started with Azure.'",
+	"mounts": [
+		"source=${localEnv:HOME}/.azure,target=/home/vscode/.azure,type=bind,consistency=cached"
+	],
 	"customizations": {
 		"vscode": {
 			"extensions": [
 				"ms-python.python",
 				"ms-azuretools.vscode-docker",
 				"esbenp.prettier-vscode",
-				"dbaeumer.vscode-eslint"
+				"dbaeumer.vscode-eslint",
+				"ms-vscode.azure-account",
+				"ms-azuretools.vscode-azurecontainerapps",
+				"ms-azuretools.vscode-azurestorage",
+				"ms-azuretools.vscode-cosmosdb",
+				"hashicorp.terraform"
 			],
 			"settings": {
 				"terminal.integrated.defaultProfile.linux": "zsh",
