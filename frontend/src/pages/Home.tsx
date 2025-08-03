@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import AgentCard, { Agent } from '../components/AgentCard';
 
 const Home: React.FC = () => {
@@ -48,9 +49,20 @@ const Home: React.FC = () => {
                     <p className="text-xl md:text-2xl text-gray-700 dark:text-gray-300 mb-6">
                         🚀 Explore sample A2A-compatible agent configurations included with this template
                     </p>
-                    <p className="text-lg text-gray-500 dark:text-gray-400 mb-12">
+                    <p className="text-lg text-gray-500 dark:text-gray-400 mb-8">
                         ✨ Replace these with your own agents to create your internal directory
                     </p>
+
+                    {/* Add Agent Button */}
+                    <div className="mb-12">
+                        <Link
+                            to="/add-agent"
+                            className="inline-flex items-center space-x-3 px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
+                        >
+                            <span className="text-2xl">➕</span>
+                            <span className="text-lg">Add New Agent</span>
+                        </Link>
+                    </div>
 
                     {/* Search Section */}
                     <div className="max-w-2xl mx-auto mb-12">
@@ -115,6 +127,13 @@ const Home: React.FC = () => {
                         </p>
                     </div>
                 )}
+            </div>
+            
+            {/* Watermark */}
+            <div className="text-center py-8">
+                <p className="text-xs text-gray-400 dark:text-gray-600 font-light">
+                    Conceptualized by Ritaja
+                </p>
             </div>
         </div>
     );

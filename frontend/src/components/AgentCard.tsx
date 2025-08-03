@@ -1,6 +1,14 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
+export interface Skill {
+    id: string;
+    name: string;
+    description: string;
+    examples?: string[];
+    tags?: string[];
+}
+
 export interface Agent {
     agent_id: string;
     name: string;
@@ -8,9 +16,12 @@ export interface Agent {
     homepage_url: string;
     openapi_url: string;
     version?: string;
-    skills?: string[];
+    skills?: (string | Skill)[];
     streaming?: boolean;
     protocol_version?: string;
+    input_modes?: string[];
+    output_modes?: string[];
+    supports_auth?: boolean;
 }
 
 const AgentCard: React.FC<{ agent: Agent }> = ({ agent }) => {
@@ -80,6 +91,21 @@ const AgentCard: React.FC<{ agent: Agent }> = ({ agent }) => {
                                 ⚡ {agent.skills.length} Skills
                             </span>
                         )}
+                        {agent.supports_auth && (
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-yellow-400 to-orange-500 text-white shadow-lg">
+                                🔐 Auth Support
+                            </span>
+                        )}
+                        {agent.input_modes && agent.input_modes.length > 0 && (
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-cyan-400 to-blue-500 text-white shadow-lg">
+                                📥 {agent.input_modes.join(', ')}
+                            </span>
+                        )}
+                        {agent.output_modes && agent.output_modes.length > 0 && (
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-indigo-400 to-purple-500 text-white shadow-lg">
+                                📤 {agent.output_modes.join(', ')}
+                            </span>
+                        )}
                         {agent.protocol_version && (
                             <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-orange-400 to-red-500 text-white shadow-lg">
                                 🔧 Protocol v{agent.protocol_version}
@@ -91,16 +117,57 @@ const AgentCard: React.FC<{ agent: Agent }> = ({ agent }) => {
                     {agent.skills && agent.skills.length > 0 && (
                         <div className="mb-6">
                             <div className="text-sm text-gray-600 dark:text-gray-400 mb-2 font-medium">Available Skills:</div>
-                            <div className="flex flex-wrap gap-1">
-                                {agent.skills.slice(0, 3).map((skill, index) => (
-                                    <span key={skill} className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-gray-700 dark:text-gray-300">
-                                        {skill}
-                                    </span>
-                                ))}
+                            <div className="space-y-2">
+                                {agent.skills.slice(0, 3).map((skill, index) => {
+                                    if (typeof skill === 'string') {
+                                        return (
+                                            <span 
+                                                key={skill} 
+                                                className="inline-block text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-gray-700 dark:text-gray-300 mr-1 mb-1"
+                                            >
+                                                {skill}
+                                            </span>
+                                        );
+                                    } else {
+                                        return (
+                                            <div key={skill.id || index} className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                                                        {skill.name}
+                                                    </span>
+                                                    {skill.tags && skill.tags.length > 0 && (
+                                                        <div className="flex gap-1">
+                                                            {skill.tags.slice(0, 2).map((tag, tagIndex) => (
+                                                                <span 
+                                                                    key={tagIndex} 
+                                                                    className="text-xs px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 rounded"
+                                                                >
+                                                                    {tag}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                {skill.description && (
+                                                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+                                                        {skill.description}
+                                                    </p>
+                                                )}
+                                                {skill.examples && skill.examples.length > 0 && (
+                                                    <div className="text-xs text-gray-500 dark:text-gray-500">
+                                                        <span className="font-medium">Examples: </span>
+                                                        <span className="italic">"{skill.examples.slice(0, 2).join('", "')}"</span>
+                                                        {skill.examples.length > 2 && <span>...</span>}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    }
+                                })}
                                 {agent.skills.length > 3 && (
-                                    <span className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-gray-500 dark:text-gray-400">
-                                        +{agent.skills.length - 3} more
-                                    </span>
+                                    <div className="text-xs text-gray-500 dark:text-gray-400 text-center py-2">
+                                        +{agent.skills.length - 3} more skills available
+                                    </div>
                                 )}
                             </div>
                         </div>

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
 import AgentDetail from './pages/AgentDetail';
+import AddAgent from './pages/AddAgent';
 
 const App: React.FC = () => {
     const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -39,6 +40,7 @@ const App: React.FC = () => {
                 <Routes>
                     <Route path="/" element={<Home />} />
                     <Route path="/agents/:agent_id" element={<AgentDetail />} />
+                    <Route path="/add-agent" element={<AddAgent />} />
                 </Routes>
             </main>
         </div>

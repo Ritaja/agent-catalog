@@ -117,17 +117,41 @@ const AgentDetail: React.FC = () => {
                             <div>
                                 <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Skills & Capabilities</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {agent.skills.map((skill, index) => (
-                                        <div 
-                                            key={skill} 
-                                            className="flex items-center space-x-3 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600"
-                                        >
-                                            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
-                                                ⚡
+                                    {agent.skills.map((skill, index) => {
+                                        const skillName = typeof skill === 'string' ? skill : skill.name;
+                                        const skillKey = typeof skill === 'string' ? skill : skill.id;
+                                        const skillDescription = typeof skill === 'object' ? skill.description : undefined;
+                                        
+                                        return (
+                                            <div 
+                                                key={skillKey || index} 
+                                                className="flex items-start space-x-3 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600"
+                                            >
+                                                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm flex-shrink-0 mt-1">
+                                                    ⚡
+                                                </div>
+                                                <div className="flex-1">
+                                                    <span className="font-medium text-gray-900 dark:text-gray-100 block">
+                                                        {skillName}
+                                                    </span>
+                                                    {skillDescription && (
+                                                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                                            {skillDescription}
+                                                        </p>
+                                                    )}
+                                                    {typeof skill === 'object' && skill.examples && skill.examples.length > 0 && (
+                                                        <div className="mt-2">
+                                                            <span className="text-xs text-gray-500 dark:text-gray-500 font-medium">Examples: </span>
+                                                            <span className="text-xs text-gray-500 dark:text-gray-500 italic">
+                                                                "{skill.examples.slice(0, 2).join('", "')}"
+                                                                {skill.examples.length > 2 && '...'}
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
-                                            <span className="font-medium text-gray-900 dark:text-gray-100">{skill}</span>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             </div>
                         )}
@@ -176,6 +200,13 @@ const AgentDetail: React.FC = () => {
                         </div>
                     </div>
                 </div>
+            </div>
+            
+            {/* Watermark */}
+            <div className="text-center py-8">
+                <p className="text-xs text-gray-400 dark:text-gray-600 font-light">
+                    Conceptualized by Ritaja
+                </p>
             </div>
         </div>
     );
