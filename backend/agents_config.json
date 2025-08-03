@@ -1,0 +1,16 @@
+{
+    "agents": [
+        {
+            "id": "task_agent",
+            "url": "http://localhost:5051"
+        },
+        {
+            "id": "calendar_agent",
+            "url": "http://localhost:5052"
+        },
+        {
+            "id": "finance_agent",
+            "url": "http://localhost:5053"
+        }
+    ]
+}

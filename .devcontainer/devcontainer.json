@@ -1,0 +1,39 @@
+{
+	"name": "Agent Catalog Dev Container",
+	"image": "mcr.microsoft.com/devcontainers/base:noble",
+	"workspaceFolder": "/workspaces/agent-catalog",
+	"features": {
+		"ghcr.io/devcontainers/features/docker-in-docker:2": {},
+		"ghcr.io/devcontainers/features/node:1": {
+			"version": "lts"
+		},
+		"ghcr.io/devcontainers/features/python:1": {
+			"version": "3.12"
+		},
+		"ghcr.io/devcontainers/features/common-utils:2": {
+			"installZsh": true,
+			"configureZshAsDefaultShell": true,
+      "installOhMyZsh": true,
+      "upgradePackages": true
+		}
+	},
+	"postCreateCommand": "sed -i 's/ZSH_THEME=\\\"robbyrussell\\\"/ZSH_THEME=\\\"agnoster\\\"/' ~/.zshrc && pip3 install -r backend/requirements.txt && pip3 install -r sample-agents/requirements.txt",
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-python.python",
+				"ms-azuretools.vscode-docker",
+				"esbenp.prettier-vscode",
+				"dbaeumer.vscode-eslint"
+			],
+			"settings": {
+				"terminal.integrated.defaultProfile.linux": "zsh",
+				"terminal.integrated.profiles.linux": {
+					"zsh": {
+						"path": "/bin/zsh"
+					}
+				}
+			}
+		}
+	}
+}

@@ -1,0 +1,6 @@
+langchain
+ollama
+pandas
+langchain-community
+langchain-ollama
+python_a2a
