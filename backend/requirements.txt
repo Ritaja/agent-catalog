@@ -2,3 +2,5 @@ fastapi
 uvicorn[standard]
 requests
 httpx
+azure-cosmos
+python-dotenv

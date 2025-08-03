@@ -6,6 +6,7 @@ import json
 import httpx
 import os
 import asyncio
+from database import db_manager
 
 
 class Skill(BaseModel):
@@ -48,9 +49,6 @@ class TestUrlResponse(BaseModel):
     success: bool
     agent: Optional[Agent] = None
     error: Optional[str] = None
-
-
-AGENTS_DB: Dict[str, Agent] = {}
 
 
 def parse_agent_data(card: dict, agent_id: str = None, base_url: str = None) -> dict:
@@ -111,8 +109,22 @@ def parse_agent_data(card: dict, agent_id: str = None, base_url: str = None) -> 
 
 
 async def load_agents_from_config():
-    """Load agent configurations and populate the in-memory database."""
-    config_path = os.path.join(os.path.dirname(__file__), 'agents_config.json')
+    """Load agent configurations and populate the database."""
+    # Check if we're in mock mode and need to load from file
+    if db_manager.is_mock_mode():
+        config_path = os.path.join(
+            os.path.dirname(__file__), 'agents_config.json')
+        if os.path.exists(config_path):
+            with open(config_path) as cfg:
+                cfg_data = json.load(cfg)
+            # Store config in mock database
+            await db_manager.update_configuration(cfg_data)
+        else:
+            # Create default config
+            await db_manager.update_configuration({"agents": []})
+
+    # Get configuration from database
+    config = await db_manager.get_configuration()
 
     # Sample mock data for enhanced agent information
     sample_agents_data = {
@@ -133,12 +145,9 @@ async def load_agents_from_config():
         }
     }
 
-    with open(config_path) as cfg:
-        cfg_data = json.load(cfg)
-
     async with httpx.AsyncClient() as client:
         tasks = []
-        for entry in cfg_data.get('agents', []):
+        for entry in config.get('agents', []):
             tasks.append(fetch_agent_details(
                 client, entry, sample_agents_data))
 
@@ -146,7 +155,9 @@ async def load_agents_from_config():
 
         for agent in results:
             if agent:
-                AGENTS_DB[agent.id] = agent
+                # Store agent in database
+                agent_dict = agent.model_dump(by_alias=True)
+                await db_manager.create_agent(agent_dict)
 
 
 async def fetch_agent_details(client: httpx.AsyncClient, entry: dict, sample_data: dict):
@@ -194,6 +205,12 @@ app = FastAPI()
 async def startup_event():
     await load_agents_from_config()
 
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Cleanup on shutdown."""
+    pass
+
 # Enable CORS for all origins (you can restrict in production)
 app.add_middleware(
     CORSMiddleware,
@@ -206,15 +223,16 @@ app.add_middleware(
 @app.get("/agents", response_model=List[Agent])
 async def get_agents():
     """Return the list of registered A2A agents."""
-    return [agent.model_dump(by_alias=True) for agent in AGENTS_DB.values()]
+    agents_data = await db_manager.get_all_agents()
+    return agents_data
 
 
 @app.get("/agents/{agent_id}", response_model=Agent)
 async def get_agent(agent_id: str):
     """Return details of a single agent by ID."""
-    agent = AGENTS_DB.get(agent_id)
-    if agent:
-        return agent.model_dump(by_alias=True)
+    agent_data = await db_manager.get_agent(agent_id)
+    if agent_data:
+        return agent_data
     raise HTTPException(status_code=404, detail="Agent not found")
 
 
@@ -282,7 +300,8 @@ async def add_agent(request: AddAgentRequest):
                     )
 
         # Check if agent ID already exists
-        if request.id in AGENTS_DB:
+        existing_agent = await db_manager.get_agent(request.id)
+        if existing_agent:
             raise HTTPException(
                 status_code=409,
                 detail=f"Agent with ID '{request.id}' already exists"
@@ -292,33 +311,23 @@ async def add_agent(request: AddAgentRequest):
         agent_data = parse_agent_data(card, request.id, request.url)
         agent = Agent(**agent_data)
 
-        # Add to in-memory database
-        AGENTS_DB[request.id] = agent
+        # Add to database
+        agent_dict = agent.model_dump(by_alias=True)
+        success = await db_manager.create_agent(agent_dict)
 
-        # Update the configuration file
-        config_path = os.path.join(
-            os.path.dirname(__file__), 'agents_config.json')
-        try:
-            with open(config_path, 'r') as f:
-                config = json.load(f)
-        except FileNotFoundError:
-            config = {"agents": []}
+        if not success:
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to save agent to database"
+            )
 
-        # Add new agent to config if not already present
-        agent_exists = any(a['id'] == request.id for a in config['agents'])
-        if not agent_exists:
-            config['agents'].append({
-                "id": request.id,
-                "url": request.url
-            })
-
-            with open(config_path, 'w') as f:
-                json.dump(config, f, indent=4)
+        # Update the configuration
+        await db_manager.add_agent_to_config(request.id, request.url)
 
         return {
             "success": True,
             "message": f"Agent '{request.id}' added successfully",
-            "agent": agent.model_dump(by_alias=True)
+            "agent": agent_dict
         }
 
     except HTTPException:
@@ -327,6 +336,43 @@ async def add_agent(request: AddAgentRequest):
         raise HTTPException(
             status_code=500,
             detail=f"Failed to add agent: {str(e)}"
+        )
+
+
+@app.delete("/agents/{agent_id}")
+async def delete_agent(agent_id: str):
+    """Delete an agent from the catalog."""
+    try:
+        # Check if agent exists
+        existing_agent = await db_manager.get_agent(agent_id)
+        if not existing_agent:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Agent with ID '{agent_id}' not found"
+            )
+
+        # Delete from database
+        success = await db_manager.delete_agent(agent_id)
+        if not success:
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to delete agent from database"
+            )
+
+        # Remove from configuration
+        await db_manager.remove_agent_from_config(agent_id)
+
+        return {
+            "success": True,
+            "message": f"Agent '{agent_id}' deleted successfully"
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to delete agent: {str(e)}"
         )
 
 

@@ -2,17 +2,245 @@
 
 This project is a web-based catalog for discovering and managing various agents. It provides a user-friendly interface to browse, view details, and interact with registered agents. The backend is built with FastAPI, and the frontend is a modern React application using Vite and Tailwind CSS.
 
-## Project Structure
+## 📋 Table of Contents
 
-The repository is organized into three main parts:
+- [✨ Features](#-features)
+- [🛠 Tech Stack](#-tech-stack)
+- [🏗️ Architecture & API Flow](#️-architecture--api-flow)
+- [🚀 Quick Start with Docker](#-quick-start-with-docker)
+- [📁 Project Structure](#-project-structure)
+- [⚙️ Manual Setup (Development)](#️-manual-setup-development)
+- [🐳 Docker Setup](#-docker-setup)
+- [🗄️ Database Configuration](#️-database-configuration)
+- [📖 Usage](#-usage)
+- [🔌 API Endpoints](#-api-endpoints)
+- [💻 Development](#-development)
+- [🤝 Contributing](#-contributing)
+- [📚 Documentation](#-documentation)
 
-- `frontend/`: Contains the React-based user interface.
-- `backend/`: The FastAPI application that serves agent information.
-- `sample-agents/`: Includes several example agents that can be registered with the catalog.
+## ✨ Features
 
-## Getting Started
+- **🚀 One-command setup** with Docker and automated health checks
+- **🔄 Hot reloading** for development with Docker Compose overrides
+- **🗄️ Database flexibility** with Azure Cosmos DB and automatic mock mode fallback
+- **🌐 Modern UI** built with React, TypeScript, and Tailwind CSS
+- **📡 REST API** with automatic OpenAPI documentation via FastAPI
+- **🤖 Sample agents** demonstrating A2A (Agent-to-Agent) protocol
+- **🔧 Developer tools** including Makefile, health checks, and debugging utilities
 
-Follow these instructions to get the project up and running on your local machine for development and testing purposes.
+## 🛠 Tech Stack
+
+- **Frontend**: React 18, TypeScript, Vite, Tailwind CSS, Nginx
+- **Backend**: FastAPI, Python 3.12, Azure Cosmos DB, Uvicorn
+- **Sample Agents**: Python, LangChain, A2A Protocol
+- **Infrastructure**: Docker, Docker Compose, Multi-stage builds
+- **Development**: Hot reloading, Health checks, Automated setup
+
+## 🏗️ Architecture & API Flow
+
+The Agent Catalog follows a modern microservices architecture with clear separation of concerns and well-defined API contracts between components.
+
+### System Architecture Diagram
+
+```mermaid
+graph TB
+    subgraph "Client Layer"
+        Browser[🌐 Web Browser]
+        DevTools[🛠️ Developer Tools]
+    end
+
+    subgraph "Frontend Layer"
+        React[⚛️ React App<br/>TypeScript + Tailwind]
+        Nginx[🔧 Nginx<br/>Reverse Proxy]
+        Vite[⚡ Vite Dev Server<br/>Hot Reload]
+    end
+
+    subgraph "Backend Layer"
+        FastAPI[🚀 FastAPI Backend<br/>Python 3.12]
+        OpenAPI[📋 OpenAPI/Swagger<br/>Auto-generated Docs]
+    end
+
+    subgraph "Database Layer"
+        CosmosDB[☁️ Azure Cosmos DB<br/>Document Database]
+        MockDB[💾 Mock Storage<br/>In-memory Fallback]
+    end
+
+    subgraph "Sample Agents"
+        TaskAgent[📋 Task Agent<br/>Port 5051]
+        CalendarAgent[📅 Calendar Agent<br/>Port 5052]
+        FinanceAgent[💰 Finance Agent<br/>Port 5053]
+        AgentRunner[🔄 Agent Runner<br/>Orchestrator]
+    end
+
+    subgraph "Infrastructure"
+        Docker[🐳 Docker Containers]
+        DockerCompose[📦 Docker Compose<br/>Orchestration]
+        HealthChecks[💓 Health Checks]
+    end
+
+    %% Client Interactions
+    Browser -->|HTTP/HTTPS| Nginx
+    DevTools -->|API Calls| FastAPI
+
+    %% Frontend Flow
+    Nginx -->|Proxy API Calls| FastAPI
+    Nginx -->|Serve Static Files| React
+    Vite -.->|Development Mode| React
+
+    %% Backend API Flow
+    FastAPI -->|Query/Store Agents| CosmosDB
+    FastAPI -->|Fallback Mode| MockDB
+    FastAPI -->|Auto-generate| OpenAPI
+    FastAPI -->|HTTP Requests| TaskAgent
+    FastAPI -->|HTTP Requests| CalendarAgent
+    FastAPI -->|HTTP Requests| FinanceAgent
+
+    %% Agent Management
+    AgentRunner -->|Start/Stop| TaskAgent
+    AgentRunner -->|Start/Stop| CalendarAgent
+    AgentRunner -->|Start/Stop| FinanceAgent
+
+    %% Infrastructure
+    DockerCompose -->|Orchestrate| Docker
+    Docker -->|Container| React
+    Docker -->|Container| FastAPI
+    Docker -->|Container| AgentRunner
+    HealthChecks -->|Monitor| Docker
+
+    %% Styling
+    classDef frontend fill:#e1f5fe
+    classDef backend fill:#f3e5f5
+    classDef database fill:#e8f5e8
+    classDef agents fill:#fff3e0
+    classDef infra fill:#fafafa
+
+    class React,Nginx,Vite frontend
+    class FastAPI,OpenAPI backend
+    class CosmosDB,MockDB database
+    class TaskAgent,CalendarAgent,FinanceAgent,AgentRunner agents
+    class Docker,DockerCompose,HealthChecks infra
+```
+
+### API Interaction Flow
+
+#### 1. **Frontend ↔ Backend Communication**
+
+```bash
+# Frontend makes HTTP requests to Backend via Nginx proxy
+GET /agents                    # Fetch all agents
+GET /agents/{agent_id}         # Fetch specific agent
+POST /add-agent               # Add new agent to catalog
+DELETE /agents/{agent_id}     # Remove agent from catalog
+POST /test-agent-url          # Validate agent URL
+```
+
+#### 2. **Backend ↔ Database Operations**
+
+```bash
+# Backend interacts with Azure Cosmos DB
+Container: agents             # Store agent configurations
+Container: configuration      # Store app configuration
+
+# Fallback to Mock Mode if Cosmos DB unavailable
+In-Memory Storage            # Development/testing mode
+JSON File Loading           # Load from agents_config.json
+```
+
+#### 3. **Backend ↔ Sample Agents Discovery**
+
+```bash
+# Backend discovers and validates agents
+GET http://localhost:5051/    # Task Agent health check
+GET http://localhost:5052/    # Calendar Agent health check
+GET http://localhost:5053/    # Finance Agent health check
+
+# Agent registration flow
+POST /test-agent-url         # Validate agent endpoint
+GET {agent_url}/openapi.json # Fetch agent capabilities
+POST /add-agent             # Register agent in database
+```
+
+#### 4. **Development vs Production Flow**
+
+**Development Mode:**
+
+- Vite dev server with hot reloading
+- Backend auto-reload on code changes
+- Direct database connections for testing
+
+**Production Mode:**
+
+- Nginx serves static React build
+- FastAPI with Uvicorn ASGI server
+- Containerized services with health checks
+
+### Data Flow Summary
+
+1. **User visits frontend** → Nginx serves React app
+2. **React app loads** → Fetches agents from `/agents` API
+3. **Backend processes request** → Queries Cosmos DB or mock storage
+4. **Agent discovery** → Backend validates sample agents on startup
+5. **User interactions** → Add/remove agents via API calls
+6. **Real-time updates** → Frontend refreshes data automatically
+
+## 🚀 Quick Start with Docker
+
+The easiest way to run the entire project is using Docker:
+
+```bash
+# Clone the repository
+git clone https://github.com/your-username/agent-catalog.git
+cd agent-catalog
+
+# Quick setup with Docker
+./setup.sh
+
+# Or manually with docker-compose
+docker-compose up --build
+```
+
+**Access the application:**
+
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8000
+- Sample Agents: ports 5051, 5052, 5053
+
+For detailed Docker setup instructions, see [� Documentation](#-documentation) section below.
+
+## 📁 Project Structure
+
+The repository is organized into three main parts with comprehensive Docker support:
+
+```
+agent-catalog/
+├── frontend/                    # React + TypeScript + Tailwind CSS frontend
+│   ├── src/                    # Source code with components and pages
+│   ├── package.json            # Node.js dependencies and scripts
+│   ├── vite.config.ts          # Vite build configuration with proxy settings
+│   ├── tailwind.config.cjs     # Tailwind CSS styling configuration
+│   └── tsconfig.json           # TypeScript compiler configuration
+├── backend/                     # FastAPI + Python backend with Azure Cosmos DB
+│   ├── main.py                 # FastAPI application with agent catalog endpoints
+│   ├── database.py             # Cosmos DB manager with mock mode fallback
+│   ├── requirements.txt        # Python dependencies including FastAPI and Azure SDK
+│   ├── agents_config.json      # Default agent configuration for mock mode
+│   └── COSMOS_DB_SETUP.md      # Detailed Azure Cosmos DB setup instructions
+├── sample-agents/               # Example A2A (Agent-to-Agent) implementations
+│   ├── run_all_agents.py       # Script to start all sample agents concurrently
+│   ├── finance_agent/          # Stock market data and financial analysis agent
+│   ├── calendar_agent/         # Calendar management and scheduling agent
+│   └── task_agent/             # Task management and productivity agent
+├── docker-compose.yml           # Production Docker orchestration configuration
+├── docker-compose.dev.yml      # Development overrides with hot reloading
+├── Dockerfile.backend          # Multi-stage Docker build for FastAPI backend
+├── Dockerfile.frontend         # Multi-stage Docker build for React frontend
+├── Dockerfile.sample-agents    # Docker container for all sample agents
+├── nginx.conf                  # Nginx configuration for frontend reverse proxy
+├── setup.sh                    # Automated Docker setup and health check script
+└── Makefile                    # Convenience commands for Docker operations
+```
+
+## ⚙️ Manual Setup (Development)
 
 ### Prerequisites
 
@@ -48,8 +276,13 @@ Make sure you have the following installed:
     The backend server is responsible for aggregating agent information.
 
     ```bash
-    cd ../backend
+    cd backend
     pip install -r requirements.txt
+
+    # Configure Azure Cosmos DB (optional)
+    cp .env.example .env
+    # Edit .env with your Azure Cosmos DB credentials
+
     uvicorn main:app --reload --port 8000
     ```
 
@@ -60,23 +293,138 @@ Make sure you have the following installed:
     The frontend provides the user interface for the catalog.
 
     ```bash
-    cd ../frontend
+    cd frontend
     npm install
     npm run dev
     ```
 
-    The application will be accessible at `http://localhost:5173`.
+    The application will be accessible at `http://localhost:3000`.
 
-## Usage
+## 🐳 Docker Setup
 
-Once all services are running, open your web browser and navigate to `http://localhost:5173`. You will see a list of available agents. You can click on an agent to view more details.
+### Quick Start
 
-## API Endpoints
+```bash
+# Setup and start all services
+./setup.sh
+
+# Or use docker-compose directly
+docker-compose up --build
+```
+
+### Development Mode
+
+```bash
+# For development with hot reloading
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+
+# Or use make commands
+make dev
+```
+
+### Available Make Commands
+
+```bash
+make help          # Show all available commands
+make build         # Build all Docker images
+make up            # Start all services
+make down          # Stop all services
+make logs          # View logs from all services
+make clean         # Clean up containers and images
+make rebuild       # Clean build and start
+make test          # Run health checks
+```
+
+## 🗄️ Database Configuration
+
+The backend supports Azure Cosmos DB for persistent storage:
+
+1. **Setup Azure Cosmos DB** (see [Cosmos DB Setup Guide](backend/COSMOS_DB_SETUP.md) for detailed instructions)
+2. **Configure environment variables:**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your credentials
+   ```
+3. **Fallback Mode:** If not configured, runs in mock mode with in-memory storage.
+
+## 📖 Usage
+
+Once all services are running, open your web browser and navigate to `http://localhost:3000`. You will see a list of available agents. You can click on an agent to view more details.
+
+## 🔌 API Endpoints
 
 The backend provides the following API endpoints:
 
 - `GET /agents`: Returns a list of all registered agents.
 - `GET /agents/{agent_id}`: Returns details for a specific agent by its ID.
+- `POST /add-agent`: Add a new agent to the catalog.
+- `DELETE /agents/{agent_id}`: Remove an agent from the catalog.
+- `POST /test-agent-url`: Test if an agent URL is valid.
 - `GET /docs`: Provides Swagger UI for interactive API documentation.
+
+## 💻 Development
+
+### Architecture Overview
+
+The Agent Catalog follows a modern microservices architecture:
+
+- **Frontend**: React SPA with TypeScript, served by Nginx in production
+- **Backend**: FastAPI REST API with automatic OpenAPI documentation
+- **Database**: Azure Cosmos DB with automatic fallback to in-memory mock storage
+- **Sample Agents**: Standalone A2A protocol implementations for testing
+
+### Hot Reloading
+
+- **Backend:** Mount source code volume for auto-reload
+- **Frontend:** Use development container or run `npm run dev` locally
+- **Sample Agents:** Mount volume for code changes
+
+### Debugging
+
+```bash
+# Access container shells
+docker-compose exec backend bash
+docker-compose exec frontend sh
+docker-compose exec sample-agents bash
+
+# View specific service logs
+docker-compose logs -f backend
+```
+
+### Development Workflow
+
+1. **Start with Docker** (recommended): `./setup.sh --dev`
+2. **Make code changes** in your editor (hot reloading enabled)
+3. **Test changes** with `./test-setup.sh`
+4. **Check logs** with `make logs` or `docker-compose logs`
+5. **Access shell** for debugging with `make shell-backend`
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make changes with proper testing
+4. Submit a pull request
+
+## 📚 Documentation
+
+This project includes comprehensive documentation to help you get started and understand the architecture:
+
+### 📚 **Setup & Deployment Guides**
+
+- **[DOCKER_README.md](DOCKER_README.md)** - Complete Docker setup guide with development and production configurations, troubleshooting, security considerations, and monitoring setup
+- **[backend/COSMOS_DB_SETUP.md](backend/COSMOS_DB_SETUP.md)** - Step-by-step Azure Cosmos DB integration guide including account creation, connection configuration, and fallback mode explanation
+
+### 🛠 **Quick Reference Files**
+
+- **[Makefile](Makefile)** - Convenient commands for Docker operations (`make help` to see all available commands)
+- **[setup.sh](setup.sh)** - Automated setup script with health checks and environment detection
+- **[.env.example](.env.example)** - Environment template for Azure Cosmos DB configuration
+
+### 🔧 **Configuration Files**
+
+- **[docker-compose.yml](docker-compose.yml)** - Production Docker orchestration
+- **[docker-compose.dev.yml](docker-compose.dev.yml)** - Development overrides with hot reloading
+- **[nginx.conf](nginx.conf)** - Frontend reverse proxy configuration
 
 ---
