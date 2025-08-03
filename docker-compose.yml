@@ -57,6 +57,8 @@ services:
       - "5051:5051"  # Task agent
       - "5052:5052"  # Calendar agent
       - "5053:5053"  # Finance agent
+    depends_on:
+      - ollama
     restart: unless-stopped
     networks:
       - agent-catalog-network
@@ -67,6 +69,26 @@ services:
       retries: 3
       start_period: 40s
 
+  # Ollama service for AI models
+  ollama:
+    build:
+      context: .
+      dockerfile: Dockerfile.ollama
+    container_name: agent-catalog-ollama
+    ports:
+      - "11434:11434"
+    restart: unless-stopped
+    networks:
+      - agent-catalog-network
+    volumes:
+      - ollama-data:/root/.ollama
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/version"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+
 networks:
   agent-catalog-network:
     driver: bridge
@@ -74,4 +96,6 @@ networks:
 # Optional: Add volumes for data persistence
 volumes:
   backend-data:
+    driver: local
+  ollama-data:
     driver: local

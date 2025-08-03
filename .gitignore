@@ -48,3 +48,14 @@ backend/.env
 # Docker volumes and data
 docker-volumes/
 *.tar.gz
+
+# Terraform
+*.tfstate
+*.tfstate.*
+*.tfvars
+.terraform/
+.terraform.lock.hcl
+tfplan*
+
+# Azure CLI
+.azure/

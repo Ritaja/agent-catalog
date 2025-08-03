@@ -2,14 +2,24 @@
 
 This project is a web-based catalog for discovering and managing various agents. It provides a user-friendly interface to browse, view details, and interact with registered agents. The backend is built with FastAPI, and the frontend is a modern React application using Vite and Tailwind CSS.
 
-## 📋 Table of Contents
+## �️ Screenshots
+
+![Agent Catalog Main Interface](images/agent-catalog-01.jpeg)
+_Browse and discover available agents through an intuitive catalog interface with detailed agent information and capabilities._
+
+![Add Agent Interface](images/addagent-agent-catalog-02.jpeg)
+_Easily add new agents to the catalog with URL validation and automatic capability detection through the streamlined add agent form._
+
+## �📋 Table of Contents
 
 - [✨ Features](#-features)
 - [🛠 Tech Stack](#-tech-stack)
 - [🏗️ Architecture & API Flow](#️-architecture--api-flow)
 - [🚀 Quick Start with Docker](#-quick-start-with-docker)
+- [☁️ Azure Deployment](#-azure-deployment)
 - [📁 Project Structure](#-project-structure)
-- [🤖 Ollama Setup (Required for Sample Agents)](#-ollama-setup-required-for-sample-agents)
+- [🤖 Ollama Setup (Automated with Docker)](#-ollama-setup-automated-with-docker)
+- [🐳 Dev Container Setup (Recommended)](#-dev-container-setup-recommended)
 - [⚙️ Manual Setup (Development)](#️-manual-setup-development)
 - [🐳 Docker Setup](#-docker-setup)
 - [🗄️ Database Configuration](#️-database-configuration)
@@ -211,7 +221,33 @@ docker-compose up --build
 - Backend API: http://localhost:8000
 - Sample Agents: ports 5051, 5052, 5053
 
-For detailed Docker setup instructions, see [� Documentation](#-documentation) section below.
+For detailed Docker setup instructions, see [📚 Documentation](#-documentation) section below.
+
+## ☁️ Azure Deployment
+
+> **TODO:** Azure deployment setup is not fully tested yet and may require additional configuration.
+
+Deploy to Azure Container Apps with one command:
+
+```bash
+# Deploy to Azure (requires Azure CLI and Terraform)
+./azure/scripts/deploy.sh
+
+# Deploy to production environment
+./azure/scripts/deploy.sh --environment prod --location "West US 2"
+
+# Monitor the deployment
+./azure/scripts/monitor.sh --interactive
+```
+
+**Azure Resources Created:**
+
+- Container Apps (Frontend, Backend, Agents, Ollama)
+- Azure Cosmos DB for data persistence
+- Azure Container Registry for images
+- Log Analytics for monitoring
+
+For detailed Azure deployment instructions and setup guide, see [Azure README](azure/README.md).
 
 ## 📁 Project Structure
 
@@ -246,9 +282,26 @@ agent-catalog/
 └── Makefile                    # Convenience commands for Docker operations
 ```
 
-## 🤖 Ollama Setup (Required for Sample Agents)
+## 🤖 Ollama Setup (Automated with Docker)
 
-The sample agents use Ollama with the `phi4-mini` model for natural language processing. You need to install and configure Ollama before running the agents.
+The sample agents use Ollama with the `phi4-mini` model for natural language processing. **When using Docker (recommended), Ollama is automatically set up and configured - no manual installation required!**
+
+### Docker Setup (Recommended)
+
+When you run `./setup.sh` or `docker-compose up`, Ollama is automatically:
+
+- Installed in a container
+- Configured with the phi4-mini model
+- Made available to the sample agents
+
+The Ollama service will be accessible at:
+
+- Container-to-container: `http://ollama:11434`
+- Host machine: `http://localhost:11434`
+
+### Manual Installation (Optional)
+
+If you prefer to install Ollama manually on your host machine:
 
 ### Installation
 
@@ -355,6 +408,52 @@ llm = ChatOllama(
 ```
 
 Available models: `ollama list` or visit [Ollama Model Library](https://ollama.ai/library)
+
+## 🐳 Dev Container Setup (Recommended)
+
+The fastest way to get started with development is using the pre-configured dev container that includes all necessary tools:
+
+### Quick Start with Dev Container
+
+1. **Open in VS Code with Dev Container extension installed**
+2. **Reopen in Container** when prompted (or use Command Palette: "Dev Containers: Reopen in Container")
+3. **Wait for setup to complete** - the container will automatically install:
+   - Azure CLI with auto-completion
+   - Terraform with auto-completion
+   - Python dependencies
+   - Node.js dependencies
+   - Helpful aliases and scripts
+
+### What's Included
+
+- **Azure CLI** - Ready for Azure deployments
+- **Terraform** - Infrastructure as Code for Azure
+- **Docker** - Container management
+- **Python 3.12** - Backend development
+- **Node.js LTS** - Frontend development
+- **Helpful aliases**:
+  - `deploy-dev`, `deploy-prod` - Quick deployment commands
+  - `monitor-azure` - Interactive monitoring
+  - `azlogin`, `azaccount` - Azure CLI shortcuts
+  - `dcup`, `dcdown` - Docker Compose shortcuts
+
+### Getting Started with Azure
+
+After the dev container is ready:
+
+```bash
+# Quick start guide
+./azure-quickstart.sh
+
+# Or login to Azure directly
+az login
+
+# Deploy to development
+deploy-dev
+
+# Monitor deployment
+monitor-azure
+```
 
 ## ⚙️ Manual Setup (Development)
 

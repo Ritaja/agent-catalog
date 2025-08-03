@@ -1,0 +1,27 @@
+# Azure Environment Configuration Template
+# Copy this file to .azure-env and fill in your values
+
+# Azure Subscription
+export AZURE_SUBSCRIPTION_ID="your-subscription-id-here"
+export AZURE_TENANT_ID="your-tenant-id-here"
+
+# Deployment Configuration
+export ENVIRONMENT="dev"
+export LOCATION="eastus"
+export PROJECT_NAME="agent-catalog"
+
+# Resource Naming (optional)
+export RESOURCE_GROUP_NAME="rg-agent-catalog-dev"
+export CONTAINER_REGISTRY_NAME="acragentcatalogdev"
+
+# Container Configuration
+export MIN_REPLICAS=0
+export MAX_REPLICAS=10
+export CPU_CORES="0.25"
+export MEMORY_SIZE="0.5Gi"
+
+# Ollama Configuration
+export OLLAMA_CPU_CORES="1.0"
+export OLLAMA_MEMORY_SIZE="4Gi"
+
+# Usage: source .azure-env
