@@ -4,17 +4,33 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Agent Catalog</title>
-    <link rel="icon" href="/favicon.ico" />
+    <meta name="description" content="Explore and discover AI agents in our colorful, animated agent catalog" />
+    <meta name="keywords" content="AI, agents, catalog, directory, automation" />
+    <title>🤖 Agent Catalog - Discover Amazing AI Agents</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
     <script type="module" src="/src/main.tsx"></script>
     <link rel="stylesheet" href="/src/index.css" />
+    <style>
+        /* Loading animation */
+        .loading {
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradient-shift 4s ease infinite;
+        }
+    </style>
 </head>
 
-<body class="h-full">
+<body class="h-full loading">
     <div id="root" class="h-full"></div>
+    <script>
+        // Remove loading class when React app loads
+        window.addEventListener('load', () => {
+            document.body.classList.remove('loading');
+        });
+    </script>
 </body>
 
 </html>
