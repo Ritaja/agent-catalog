@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-A2A Server for Finance Agent
-This module defines the Finance Agent and A2A server setup.
+A2A Server and FastMCP Server for Finance Agent
+This module defines the Finance Agent with both A2A and MCP server setups.
 """
 import sqlite3
 import pandas as pd
@@ -10,6 +10,14 @@ from python_a2a import run_server, A2AServer, AgentCard, AgentSkill  # type: ign
 from langchain.tools import Tool
 from langchain.agents import initialize_agent, AgentExecutor, AgentType  # type: ignore
 from langchain_ollama import ChatOllama  # type: ignore
+
+# FastMCP import
+try:
+    from fastmcp import FastMCP
+    MCP_AVAILABLE = True
+except ImportError:
+    MCP_AVAILABLE = False
+    print("Warning: fastmcp not available. Install with: pip install fastmcp")
 
 # Generate sample stock market data
 data = {
@@ -94,18 +102,56 @@ def start_a2a_agent(host: str, port: int):
     run_server(server, host=host, port=port)
 
 
+def start_mcp_server(host: str = "0.0.0.0", port: int = 5054):
+    """Start the MCP server (alternative to A2A)"""
+    if not MCP_AVAILABLE:
+        print("Error: fastmcp not available. Install with: pip install fastmcp")
+        return
+    
+    # Create FastMCP server with host and port
+    mcp_server = FastMCP("Finance Agent", host=host, port=port)
+    
+    # Register tools using the tool decorator
+    @mcp_server.tool
+    def sql_query(query: str) -> str:
+        """Execute SQL queries on stock data"""
+        return sql_query_tool(query)
+    
+    @mcp_server.tool
+    def stock_price(symbol: str) -> str:
+        """Get price for a specific stock"""
+        try:
+            query = f"SELECT symbol, price FROM stocks WHERE symbol = '{symbol.upper()}'"
+            result = sql_query_tool(query)
+            if "Error" in result:
+                return f"Stock symbol '{symbol}' not found or error occurred."
+            return result
+        except Exception as e:
+            return f'Error getting stock price: {e}'
+    
+    print(f"🚀 Starting Finance Agent MCP server on {host}:{port}")
+    # Run the FastMCP server with SSE transport
+    mcp_server.run(transport="sse")
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description="Start A2A server for Finance Agent")
+        description="Start server for Finance Agent")
     parser.add_argument(
         '--host', default='0.0.0.0',
-        help="Host to bind the A2A server (default: 0.0.0.0)"
+        help="Host to bind the server (default: 0.0.0.0)"
     )
     parser.add_argument(
         '--port', type=int, default=5053,
-        help="Port for the A2A server (default: 5053)"
+        help="Port for the server (default: 5053)"
+    )
+    parser.add_argument(
+        '--server-type', choices=['a2a', 'mcp'], default='a2a',
+        help="Type of server to start (default: a2a)"
     )
     args = parser.parse_args()
 
-    print(f"🔧 Starting Finance Agent A2A server on {args.host}:{args.port}")
-    start_a2a_agent(host=args.host, port=args.port)
+    if args.server_type == 'mcp':
+        print(f"🚀 Starting Finance Agent MCP server on {args.host}:{args.port}")
+        start_mcp_server(host=args.host, port=args.port)
+    else:
+        print(f"🔧 Starting Finance Agent A2A server on {args.host}:{args.port}")
+        start_a2a_agent(host=args.host, port=args.port)

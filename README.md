@@ -1,6 +1,6 @@
 # Agent Catalog
 
-This project is a web-based catalog for discovering and managing various agents. It provides a user-friendly interface to browse, view details, and interact with registered agents. The backend is built with FastAPI, and the frontend is a modern React application using Vite and Tailwind CSS.
+This project is a web-based catalog for discovering and managing various agents supporting both **A2A (Agent-to-Agent)** and **MCP (Model Context Protocol)** standards. It provides a user-friendly interface to browse, view details, and interact with registered agents. The system automatically scans and displays comprehensive metadata for MCP servers including tools, resources, prompts, and capabilities. The backend is built with FastAPI, and the frontend is a modern React application using Vite and Tailwind CSS.
 
 ![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
 ![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)
@@ -16,20 +16,25 @@ This project is a web-based catalog for discovering and managing various agents.
 ## 🏷️ Screenshots
 
 ![Agent Catalog Main Interface](images/agent-catalog-01.jpeg)
-_Browse and discover available agents through an intuitive catalog interface with detailed agent information and capabilities._
+_Browse and discover available agents through an intuitive catalog interface with detailed agent information, capabilities, and support for both A2A and MCP protocols._
 
 ![Add Agent Interface](images/addagent-agent-catalog-02.jpeg)
-_Easily add new agents to the catalog with URL validation and automatic capability detection through the streamlined add agent form._
+_Easily add new A2A or MCP agents to the catalog with URL validation, automatic capability detection, and protocol-specific configuration through the streamlined add agent form._
 
-## �📋 Table of Contents
+![Add Agent Interface](images/addagent-agent-catalog-03.jpeg)
+_Easily add new A2A or MCP agents to the catalog with URL validation, automatic capability detection, and protocol-specific configuration through the streamlined add agent form._
 
+## 📋 Table of Contents
+
+- [🏷️ Screenshots](#️-screenshots)
 - [✨ Features](#-features)
 - [🛠 Tech Stack](#-tech-stack)
 - [🏗️ Architecture & API Flow](#️-architecture--api-flow)
 - [🚀 Quick Start with Docker](#-quick-start-with-docker)
-- [☁️ Azure Deployment](#-azure-deployment)
+- [☁️ Azure Deployment](#️-azure-deployment)
 - [📁 Project Structure](#-project-structure)
 - [🤖 Ollama Setup (Automated with Docker)](#-ollama-setup-automated-with-docker)
+- [🧩 MCP (Model Context Protocol) Support](#-mcp-model-context-protocol-support)
 - [🐳 Dev Container Setup (Recommended)](#-dev-container-setup-recommended)
 - [⚙️ Manual Setup (Development)](#️-manual-setup-development)
 - [🐳 Docker Setup](#-docker-setup)
@@ -47,14 +52,20 @@ _Easily add new agents to the catalog with URL validation and automatic capabili
 - **🗄️ Database flexibility** with Azure Cosmos DB and automatic mock mode fallback
 - **🌐 Modern UI** built with React, TypeScript, and Tailwind CSS
 - **📡 REST API** with automatic OpenAPI documentation via FastAPI
-- **🤖 Sample agents** demonstrating A2A (Agent-to-Agent) protocol
+- **🤖 Dual Protocol Support** for both A2A (Agent-to-Agent) and MCP (Model Context Protocol) agents
+- **🧩 Advanced MCP Integration** with automatic metadata scanning and real-time capability discovery
+- **🔍 MCP Server Inspection** - Automatically discovers and displays tools, resources, prompts, and server capabilities
+- **🔧 Hybrid Agent Support** - Agents that support both A2A and MCP protocols simultaneously
+- **📊 Protocol Analytics** - Visual breakdown of agent types and capabilities across protocols
 - **🔧 Developer tools** including Makefile, health checks, and debugging utilities
 
 ## 🛠 Tech Stack
 
 - **Frontend**: React 18, TypeScript, Vite, Tailwind CSS, Nginx
 - **Backend**: FastAPI, Python 3.12, Azure Cosmos DB, Uvicorn
-- **Sample Agents**: Python, LangChain, A2A Protocol
+- **Agent Protocols**: A2A (Agent-to-Agent), MCP (Model Context Protocol)
+- **MCP Transports**: SSE (Server-Sent Events), STDIO, Streamable HTTP
+- **Sample Agents**: Python, LangChain, A2A Protocol, FastMCP
 - **Infrastructure**: Docker, Docker Compose, Multi-stage builds
 - **Development**: Hot reloading, Health checks, Automated setup
 
@@ -88,9 +99,10 @@ graph TB
     end
 
     subgraph "Sample Agents"
-        TaskAgent[📋 Task Agent<br/>Port 5051]
-        CalendarAgent[📅 Calendar Agent<br/>Port 5052]
-        FinanceAgent[💰 Finance Agent<br/>Port 5053]
+        TaskAgent[📋 Task Agent<br/>A2A Protocol<br/>Port 5051]
+        CalendarAgent[📅 Calendar Agent<br/>A2A Protocol<br/>Port 5052]
+        FinanceAgent[💰 Finance Agent<br/>Hybrid (A2A + MCP)<br/>Ports 5053/5054]
+        MCPServer[🧩 MCP Server<br/>Tools, Resources, Prompts<br/>SSE Transport]
         AgentRunner[🔄 Agent Runner<br/>Orchestrator]
     end
 
@@ -116,11 +128,14 @@ graph TB
     FastAPI -->|HTTP Requests| TaskAgent
     FastAPI -->|HTTP Requests| CalendarAgent
     FastAPI -->|HTTP Requests| FinanceAgent
+    FastAPI -->|MCP Metadata Scan| MCPServer
+    FastAPI -->|JSON-RPC over HTTP| MCPServer
 
     %% Agent Management
     AgentRunner -->|Start/Stop| TaskAgent
     AgentRunner -->|Start/Stop| CalendarAgent
     AgentRunner -->|Start/Stop| FinanceAgent
+    AgentRunner -->|Start/Stop| MCPServer
 
     %% Infrastructure
     DockerCompose -->|Orchestrate| Docker
@@ -149,11 +164,12 @@ graph TB
 
 ```bash
 # Frontend makes HTTP requests to Backend via Nginx proxy
-GET /agents                    # Fetch all agents
-GET /agents/{agent_id}         # Fetch specific agent
-POST /add-agent               # Add new agent to catalog
+GET /agents                    # Fetch all agents (A2A + MCP)
+GET /agents/{agent_id}         # Fetch specific agent details
+POST /add-agent               # Add new A2A or MCP agent to catalog
 DELETE /agents/{agent_id}     # Remove agent from catalog
-POST /test-agent-url          # Validate agent URL
+POST /test-agent-url          # Validate A2A or MCP agent URL
+POST /agents/{agent_id}/scan-mcp  # Scan MCP server for metadata
 ```
 
 #### 2. **Backend ↔ Database Operations**
@@ -171,15 +187,22 @@ JSON File Loading           # Load from agents_config.json
 #### 3. **Backend ↔ Sample Agents Discovery**
 
 ```bash
-# Backend discovers and validates agents
+# A2A Agent Discovery
 GET http://localhost:5051/    # Task Agent health check
 GET http://localhost:5052/    # Calendar Agent health check
-GET http://localhost:5053/    # Finance Agent health check
+GET http://localhost:5053/    # Finance Agent A2A endpoint
+
+# MCP Server Discovery and Metadata Scanning
+POST http://localhost:5054/mcp  # Finance Agent MCP endpoint
+JSON-RPC initialize            # Discover MCP server capabilities
+JSON-RPC tools/list           # Scan available MCP tools
+JSON-RPC resources/list       # Scan available MCP resources
+JSON-RPC prompts/list         # Scan available MCP prompts
 
 # Agent registration flow
-POST /test-agent-url         # Validate agent endpoint
-GET {agent_url}/openapi.json # Fetch agent capabilities
-POST /add-agent             # Register agent in database
+POST /test-agent-url         # Validate A2A or MCP endpoint
+GET {agent_url}/openapi.json # Fetch A2A agent capabilities
+POST /add-agent             # Register agent in database with protocol type
 ```
 
 #### 4. **Development vs Production Flow**
@@ -230,7 +253,8 @@ docker-compose up --build
 
 - Frontend: http://localhost:3000
 - Backend API: http://localhost:8000
-- Sample Agents: ports 5051, 5052, 5053
+- Sample Agents (A2A): ports 5051, 5052, 5053
+- Finance Agent (MCP): port 5054/sse
 
 For detailed Docker setup instructions, see [📚 Documentation](#-documentation) section below.
 
@@ -278,11 +302,14 @@ agent-catalog/
 │   ├── requirements.txt        # Python dependencies including FastAPI and Azure SDK
 │   ├── agents_config.json      # Default agent configuration for mock mode
 │   └── COSMOS_DB_SETUP.md      # Detailed Azure Cosmos DB setup instructions
-├── sample-agents/               # Example A2A (Agent-to-Agent) implementations
+├── sample-agents/               # Example A2A and MCP agent implementations
 │   ├── run_all_agents.py       # Script to start all sample agents concurrently
-│   ├── finance_agent/          # Stock market data and financial analysis agent
-│   ├── calendar_agent/         # Calendar management and scheduling agent
-│   └── task_agent/             # Task management and productivity agent
+│   ├── finance_agent/          # Hybrid agent with A2A and MCP support
+│   │   ├── agent.py           # A2A server implementation
+│   │   ├── mcp_agent.py       # FastMCP server implementation
+│   │   └── README.md          # Finance agent documentation
+│   ├── calendar_agent/         # Calendar management and scheduling agent (A2A)
+│   └── task_agent/             # Task management and productivity agent (A2A)
 ├── docker-compose.yml           # Production Docker orchestration configuration
 ├── docker-compose.dev.yml      # Development overrides with hot reloading
 ├── Dockerfile.backend          # Multi-stage Docker build for FastAPI backend
@@ -419,6 +446,153 @@ llm = ChatOllama(
 ```
 
 Available models: `ollama list` or visit [Ollama Model Library](https://ollama.ai/library)
+
+## 🧩 MCP (Model Context Protocol) Support
+
+The Agent Catalog provides comprehensive support for MCP servers with automatic metadata discovery and rich visualization of server capabilities.
+
+### Supported MCP Features
+
+- **🔄 Multiple Transport Types**: SSE (Server-Sent Events), STDIO, Streamable HTTP
+- **🔧 Tools Discovery**: Automatically scans and displays available MCP tools with schemas
+- **📁 Resources Management**: Lists and manages MCP server resources with MIME type detection
+- **💬 Prompt Templates**: Discovers prompt templates with argument specifications
+- **🚀 Server Capabilities**: Real-time scanning of MCP server capabilities and metadata
+- **🔍 Metadata Inspection**: Deep inspection similar to MCP Inspector with JSON-RPC protocol
+
+### MCP Server Configuration
+
+MCP servers can be added to the catalog in several ways:
+
+#### 1. **Automatic Configuration (Sample Agents)**
+
+The finance agent demonstrates hybrid A2A + MCP support:
+
+```json
+{
+  "id": "finance_agent",
+  "url": "http://localhost:5053",
+  "protocol": "hybrid",
+  "mcp": {
+    "transport": "sse",
+    "sseUrl": "http://localhost:5054/sse"
+  }
+}
+```
+
+#### 2. **Manual Agent Addition via UI**
+
+1. Navigate to "Add Agent" in the catalog
+2. Enter the MCP server URL (e.g., `http://localhost:5054/sse`)
+3. Select protocol type: `MCP` or `Hybrid`
+4. The system automatically scans for capabilities
+
+#### 3. **API-Based Registration**
+
+```bash
+curl -X POST "http://localhost:8000/add-agent" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": "my_mcp_server",
+    "url": "http://localhost:8080",
+    "protocol": "mcp",
+    "mcp": {
+      "transport": "sse",
+      "sseUrl": "http://localhost:8080/sse"
+    }
+  }'
+```
+
+### MCP Metadata Scanning
+
+The catalog automatically discovers MCP server metadata using JSON-RPC protocol:
+
+#### Capabilities Discovery
+
+- **Server Info**: Name, version, protocol version
+- **Available Capabilities**: Tools, resources, prompts, roots, sampling
+- **Transport Details**: Connection type and endpoint information
+
+#### Tools Scanning
+
+```json
+{
+  "method": "tools/list",
+  "result": {
+    "tools": [
+      {
+        "name": "analyze_expenses",
+        "description": "Analyze financial expenses",
+        "inputSchema": { "type": "object", "properties": {...} }
+      }
+    ]
+  }
+}
+```
+
+#### Resources Discovery
+
+```json
+{
+  "method": "resources/list",
+  "result": {
+    "resources": [
+      {
+        "uri": "file://data/expenses.csv",
+        "name": "Expense Data",
+        "mimeType": "text/csv",
+        "description": "Historical expense records"
+      }
+    ]
+  }
+}
+```
+
+### Frontend MCP Visualization
+
+The frontend provides rich visualization for MCP servers:
+
+- **🧩 MCP Protocol Badges**: Visual indicators for MCP vs A2A vs Hybrid agents
+- **📊 Capability Overview**: Count of tools, resources, and prompts
+- **🔧 Tools Listing**: Detailed view of available MCP tools with descriptions
+- **📁 Resource Browser**: Browse and preview MCP resources
+- **💬 Prompt Gallery**: View and test prompt templates
+- **🔍 Server Details**: Connection status, transport type, and endpoint information
+- **📈 Protocol Analytics**: Summary statistics across all agent types
+
+### MCP Development & Testing
+
+For developers working with MCP servers:
+
+#### Local MCP Server Testing
+
+```bash
+# Start a sample MCP server
+npm start my-mcp-server
+
+# Add to catalog for testing
+curl -X POST "http://localhost:8000/test-agent-url" \
+  -H "Content-Type: application/json" \
+  -d '{"url": "http://localhost:3000/sse", "protocol": "mcp"}'
+```
+
+#### Metadata Refresh
+
+```bash
+# Trigger metadata rescan for an existing MCP agent
+curl -X POST "http://localhost:8000/agents/my_mcp_server/scan-mcp"
+```
+
+#### Integration with MCP Inspector
+
+The catalog's MCP scanning is inspired by and compatible with the [MCP Inspector](https://modelcontextprotocol.io/legacy/tools/inspector) workflow, providing similar metadata discovery but with persistent storage and catalog management.
+
+### MCP Resources & Documentation
+
+- **[MCP Specification](https://spec.modelcontextprotocol.io/)** - Official MCP protocol specification
+- **[MCP Inspector](https://modelcontextprotocol.io/legacy/tools/inspector)** - Interactive MCP server testing tool
+- **[FastMCP Framework](https://gofastmcp.com)** - Python framework for building MCP servers
+- **[MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk)** - Official TypeScript implementation
 
 ## 🐳 Dev Container Setup (Recommended)
 
@@ -580,14 +754,24 @@ Once all services are running, open your web browser and navigate to `http://loc
 
 ## 🔌 API Endpoints
 
-The backend provides the following API endpoints:
+The backend provides the following API endpoints for both A2A and MCP agent management:
 
-- `GET /agents`: Returns a list of all registered agents.
-- `GET /agents/{agent_id}`: Returns details for a specific agent by its ID.
-- `POST /add-agent`: Add a new agent to the catalog.
-- `DELETE /agents/{agent_id}`: Remove an agent from the catalog.
-- `POST /test-agent-url`: Test if an agent URL is valid.
-- `GET /docs`: Provides Swagger UI for interactive API documentation.
+### Core Agent Management
+
+- `GET /agents`: Returns a list of all registered agents (A2A and MCP)
+- `GET /agents/{agent_id}`: Returns details for a specific agent by its ID
+- `POST /add-agent`: Add a new A2A or MCP agent to the catalog
+- `DELETE /agents/{agent_id}`: Remove an agent from the catalog
+- `POST /test-agent-url`: Test if an A2A or MCP agent URL is valid
+
+### MCP-Specific Endpoints
+
+- `POST /agents/{agent_id}/scan-mcp`: Trigger metadata scan for MCP servers to discover tools, resources, and prompts
+
+### Documentation
+
+- `GET /docs`: Provides Swagger UI for interactive API documentation
+- `GET /openapi.json`: OpenAPI specification for the entire catalog API
 
 ## 💻 Development
 

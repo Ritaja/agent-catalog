@@ -12,6 +12,9 @@ interface TestResult {
 const AddAgent: React.FC = () => {
     const [url, setUrl] = useState('');
     const [agentId, setAgentId] = useState('');
+    const [protocol, setProtocol] = useState<'a2a' | 'mcp' | 'hybrid'>('a2a');
+    const [mcpTransport, setMcpTransport] = useState<'sse' | 'stdio' | 'streamable-http' | ''>('');
+    const [mcpSseUrl, setMcpSseUrl] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [testResult, setTestResult] = useState<TestResult | null>(null);
     const [isAdding, setIsAdding] = useState(false);
@@ -32,7 +35,14 @@ const AddAgent: React.FC = () => {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ url: url.trim() }),
+                body: JSON.stringify({ 
+                    url: url.trim(),
+                    protocol,
+                    mcp: mcpTransport || mcpSseUrl ? {
+                        transport: mcpTransport || undefined,
+                        sseUrl: mcpSseUrl || undefined,
+                    } : undefined
+                }),
             });
 
             const result = await response.json();
@@ -63,7 +73,7 @@ const AddAgent: React.FC = () => {
     };
 
     const addAgent = async () => {
-        if (!url.trim() || !agentId.trim()) {
+    if (!url.trim() || !agentId.trim()) {
             alert('Please provide both URL and Agent ID');
             return;
         }
@@ -83,7 +93,12 @@ const AddAgent: React.FC = () => {
                 },
                 body: JSON.stringify({ 
                     id: agentId.trim(),
-                    url: url.trim() 
+                    url: url.trim(),
+                    protocol,
+                    mcp: mcpTransport || mcpSseUrl ? {
+                        transport: mcpTransport || undefined,
+                        sseUrl: mcpSseUrl || undefined,
+                    } : undefined
                 }),
             });
 
@@ -108,6 +123,9 @@ const AddAgent: React.FC = () => {
     const resetForm = () => {
         setUrl('');
         setAgentId('');
+    setProtocol('a2a');
+    setMcpTransport('');
+    setMcpSseUrl('');
         setTestResult(null);
         setAddSuccess(false);
     };
@@ -133,7 +151,7 @@ const AddAgent: React.FC = () => {
                         Add New Agent
                     </h1>
                     <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-                        Discover and add new A2A agents by providing their URL. Test the connection and preview the agent before adding it to the catalog.
+                        Discover and add new agents supporting A2A protocol, MCP (Model Context Protocol), or hybrid implementations. Test the connection and preview the agent before adding it to the catalog.
                     </p>
                 </div>
 
@@ -177,6 +195,28 @@ const AddAgent: React.FC = () => {
                             </h2>
 
                             <div className="space-y-6">
+                                {/* Protocol */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        Protocol
+                                    </label>
+                                    <div className="flex gap-3">
+                                        {(['a2a','mcp','hybrid'] as const).map(p => (
+                                            <button
+                                                key={p}
+                                                type="button"
+                                                onClick={() => setProtocol(p)}
+                                                className={`px-3 py-1.5 rounded-lg text-sm font-medium border ${protocol===p? 'bg-purple-600 text-white border-purple-600':'bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 border-gray-300 dark:border-gray-600'}`}
+                                            >
+                                                {p.toUpperCase()}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                                        Choose whether this is an A2A agent, an MCP server, or supports both (Hybrid).
+                                    </p>
+                                </div>
+
                                 {/* Agent URL */}
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -190,7 +230,7 @@ const AddAgent: React.FC = () => {
                                         className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                                     />
                                     <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                                        The base URL where your A2A agent is running
+                                        The base URL where your agent is running. For MCP SSE, this may be the server origin.
                                     </p>
                                 </div>
 
@@ -210,6 +250,37 @@ const AddAgent: React.FC = () => {
                                         Unique identifier for the agent (will be auto-filled after testing)
                                     </p>
                                 </div>
+
+                                {/* MCP Details */}
+                                {(protocol === 'mcp' || protocol === 'hybrid') && (
+                                    <div className="space-y-4 bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+                                        <div className="text-sm font-medium text-gray-700 dark:text-gray-300">MCP Details</div>
+                                        <div>
+                                            <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">Transport</label>
+                                            <select
+                                                value={mcpTransport}
+                                                onChange={(e) => setMcpTransport(e.target.value as any)}
+                                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                                            >
+                                                <option value="">Select transport (optional)</option>
+                                                <option value="sse">SSE</option>
+                                                <option value="stdio">STDIO</option>
+                                                <option value="streamable-http">Streamable HTTP</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">SSE URL</label>
+                                            <input
+                                                type="url"
+                                                value={mcpSseUrl}
+                                                onChange={(e) => setMcpSseUrl(e.target.value)}
+                                                placeholder="http://localhost:5054/sse"
+                                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                                            />
+                                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Required for SSE transport.</p>
+                                        </div>
+                                    </div>
+                                )}
 
                                 {/* Test Button */}
                                 <button
@@ -285,10 +356,12 @@ const AddAgent: React.FC = () => {
                                 <span>Tips for Adding Agents</span>
                             </h3>
                             <ul className="text-blue-600 dark:text-blue-300 text-sm space-y-2">
-                                <li>• Ensure your agent is running and accessible at the provided URL</li>
-                                <li>• The agent should implement the A2A protocol endpoints</li>
+                                <li>• <strong>A2A Agents:</strong> Ensure your agent is running and accessible at the provided URL</li>
+                                <li>• <strong>MCP Servers:</strong> Provide transport details (SSE URL for Server-Sent Events)</li>
+                                <li>• <strong>Hybrid Agents:</strong> Support both A2A and MCP protocols</li>
                                 <li>• Testing will validate the connection and fetch agent metadata</li>
                                 <li>• Agent ID should be unique and descriptive</li>
+                                <li>• For MCP SSE transport, ensure the SSE endpoint is accessible</li>
                             </ul>
                         </div>
                     </div>
@@ -323,11 +396,138 @@ const AddAgent: React.FC = () => {
                             )}
 
                             {testResult?.success && testResult.agent && (
-                                <div>
-                                    <div className="mb-4 text-sm text-gray-600 dark:text-gray-400">
-                                        This is how the agent will appear in the catalog:
+                                <div className="space-y-6">
+                                    {/* Protocol-specific Information */}
+                                    <div className="bg-gray-50 dark:bg-gray-700/30 rounded-xl p-6 border border-gray-200 dark:border-gray-600">
+                                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center space-x-2">
+                                            <span>🔌</span>
+                                            <span>Protocol Information</span>
+                                        </h3>
+                                        
+                                        <div className="grid gap-4">
+                                            {/* Protocol Type */}
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Protocol Type:</span>
+                                                <div className="flex gap-2">
+                                                    {(!testResult.agent.protocol || testResult.agent.protocol === 'a2a' || testResult.agent.protocol === 'hybrid') && (
+                                                        <span className="px-2 py-1 bg-gray-500 text-white text-xs rounded-full font-medium">
+                                                            A2A
+                                                        </span>
+                                                    )}
+                                                    {(testResult.agent.protocol === 'mcp' || testResult.agent.protocol === 'hybrid' || testResult.agent.mcp) && (
+                                                        <span className="px-2 py-1 bg-blue-500 text-white text-xs rounded-full font-medium">
+                                                            MCP
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* A2A Details */}
+                                            {(!testResult.agent.protocol || testResult.agent.protocol === 'a2a' || testResult.agent.protocol === 'hybrid') && (
+                                                <div className="space-y-3 bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-100 dark:border-gray-700">
+                                                    <div className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center space-x-2">
+                                                        <span>🔌</span>
+                                                        <span>A2A Protocol Details</span>
+                                                    </div>
+                                                    <div className="grid gap-2 text-sm">
+                                                        <div className="flex justify-between">
+                                                            <span className="text-gray-600 dark:text-gray-400">Version:</span>
+                                                            <span className="text-gray-900 dark:text-gray-100 font-mono">
+                                                                {testResult.agent.protocol_version || 'v0.2.6'}
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex justify-between">
+                                                            <span className="text-gray-600 dark:text-gray-400">OpenAPI URL:</span>
+                                                            <span className="text-blue-600 dark:text-blue-400 font-mono text-xs truncate max-w-48">
+                                                                {testResult.agent.openapi_url}
+                                                            </span>
+                                                        </div>
+                                                        {testResult.agent.streaming !== undefined && (
+                                                            <div className="flex justify-between">
+                                                                <span className="text-gray-600 dark:text-gray-400">Streaming:</span>
+                                                                <span className={`font-medium ${testResult.agent.streaming ? 'text-green-600' : 'text-gray-500'}`}>
+                                                                    {testResult.agent.streaming ? '✅ Enabled' : '❌ Disabled'}
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                        {testResult.agent.supports_auth !== undefined && (
+                                                            <div className="flex justify-between">
+                                                                <span className="text-gray-600 dark:text-gray-400">Auth Support:</span>
+                                                                <span className={`font-medium ${testResult.agent.supports_auth ? 'text-green-600' : 'text-gray-500'}`}>
+                                                                    {testResult.agent.supports_auth ? '🔐 Supported' : '❌ Not Supported'}
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* MCP Details */}
+                                            {(testResult.agent.protocol === 'mcp' || testResult.agent.protocol === 'hybrid' || testResult.agent.mcp) && (
+                                                <div className="space-y-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-700">
+                                                    <div className="text-sm font-medium text-blue-700 dark:text-blue-300 flex items-center space-x-2">
+                                                        <span>🧩</span>
+                                                        <span>MCP Protocol Details</span>
+                                                    </div>
+                                                    <div className="grid gap-2 text-sm">
+                                                        {testResult.agent.mcp?.transport && (
+                                                            <div className="flex justify-between">
+                                                                <span className="text-blue-600 dark:text-blue-400">Transport:</span>
+                                                                <span className="text-blue-900 dark:text-blue-100 font-mono uppercase">
+                                                                    {testResult.agent.mcp.transport}
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                        {testResult.agent.mcp?.sseUrl && (
+                                                            <div className="flex justify-between">
+                                                                <span className="text-blue-600 dark:text-blue-400">SSE URL:</span>
+                                                                <span className="text-blue-900 dark:text-blue-100 font-mono text-xs truncate max-w-48">
+                                                                    {testResult.agent.mcp.sseUrl}
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                        {!testResult.agent.mcp?.transport && !testResult.agent.mcp?.sseUrl && (
+                                                            <div className="text-blue-600 dark:text-blue-400 text-xs italic">
+                                                                MCP server detected - specific transport details not provided
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Skills Preview */}
+                                            {testResult.agent.skills && testResult.agent.skills.length > 0 && (
+                                                <div className="space-y-3">
+                                                    <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                        Available Skills ({testResult.agent.skills.length}):
+                                                    </div>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {testResult.agent.skills.slice(0, 6).map((skill, index) => (
+                                                            <span
+                                                                key={typeof skill === 'string' ? skill : skill.id || index}
+                                                                className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs rounded-full font-medium"
+                                                            >
+                                                                {typeof skill === 'string' ? skill : skill.name}
+                                                            </span>
+                                                        ))}
+                                                        {testResult.agent.skills.length > 6 && (
+                                                            <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-xs rounded-full">
+                                                                +{testResult.agent.skills.length - 6} more
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
-                                    <AgentCard agent={testResult.agent} />
+
+                                    {/* Agent Card Preview */}
+                                    <div>
+                                        <div className="mb-4 text-sm text-gray-600 dark:text-gray-400">
+                                            This is how the agent will appear in the catalog:
+                                        </div>
+                                        <AgentCard agent={testResult.agent} />
+                                    </div>
                                 </div>
                             )}
                         </div>

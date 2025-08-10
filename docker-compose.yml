@@ -56,14 +56,15 @@ services:
     ports:
       - "5051:5051"  # Task agent
       - "5052:5052"  # Calendar agent
-      - "5053:5053"  # Finance agent
+      - "5053:5053"  # Finance agent (A2A)
+      - "5054:5054"  # Finance agent (MCP - SSE)
     depends_on:
       - ollama
     restart: unless-stopped
     networks:
       - agent-catalog-network
     healthcheck:
-      test: ["CMD-SHELL", "pgrep -f 'agent.py' > /dev/null || exit 1"]
+      test: ["CMD-SHELL", "pgrep -f 'agent.py|mcp_agent.py' > /dev/null || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3

@@ -10,7 +10,12 @@
         },
         {
             "id": "finance_agent",
-            "url": "http://localhost:5053"
+            "url": "http://localhost:5053",
+            "protocol": "hybrid",
+            "mcp": {
+                "transport": "sse",
+                "sseUrl": "http://localhost:5054/sse"
+            }
         }
     ]
 }

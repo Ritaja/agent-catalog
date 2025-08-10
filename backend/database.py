@@ -212,8 +212,11 @@ class CosmosDBManager:
             logger.error(f"Error updating configuration: {str(e)}")
             return False
 
-    async def add_agent_to_config(self, agent_id: str, agent_url: str) -> bool:
-        """Add an agent to the configuration."""
+    async def add_agent_to_config(self, agent_id: str, agent_url: str, *, protocol: str = "a2a", mcp: Optional[Dict[str, Any]] = None) -> bool:
+        """Add an agent to the configuration.
+
+        Extended to support MCP entries with protocol and mcp metadata.
+        """
         config = await self.get_configuration()
 
         # Check if agent already exists in config
@@ -222,10 +225,14 @@ class CosmosDBManager:
         if not agent_exists:
             if 'agents' not in config:
                 config['agents'] = []
-            config['agents'].append({
+            entry: Dict[str, Any] = {
                 "id": agent_id,
-                "url": agent_url
-            })
+                "url": agent_url,
+                "protocol": protocol,
+            }
+            if mcp:
+                entry["mcp"] = mcp
+            config['agents'].append(entry)
             return await self.update_configuration(config)
         return True
 

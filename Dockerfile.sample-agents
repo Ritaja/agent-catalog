@@ -21,12 +21,12 @@ COPY sample-agents/ .
 # Make the script executable
 RUN chmod +x run_all_agents.py
 
-# Expose ports for all agents
-EXPOSE 5051 5052 5053
+# Expose ports for all agents (including finance MCP on 5054)
+EXPOSE 5051 5052 5053 5054
 
 # Health check by checking if processes are running
 HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
-    CMD pgrep -f "agent.py" > /dev/null || exit 1
+    CMD pgrep -f "agent.py|mcp_agent.py" > /dev/null || exit 1
 
 # Run all agents
 CMD ["python", "run_all_agents.py"]

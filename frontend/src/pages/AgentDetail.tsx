@@ -62,6 +62,9 @@ const AgentDetail: React.FC = () => {
     
     const gradient = gradients[Math.abs(agent_id?.split('').reduce((a, b) => a + b.charCodeAt(0), 0) || 0) % gradients.length];
 
+    const mcpTransport = agent?.mcp?.transport?.toUpperCase();
+    const mcpSseUrl = agent?.mcp?.sseUrl;
+
     return (
         <div className="min-h-screen py-12 bg-gray-50 dark:bg-gray-900">
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -88,10 +91,20 @@ const AgentDetail: React.FC = () => {
                                 <h1 className="text-4xl md:text-5xl font-black mb-2">
                                     {agent.name}
                                 </h1>
-                                <div className="flex items-center space-x-4">
+                                <div className="flex items-center space-x-2 flex-wrap">
                                     <span className="px-3 py-1 bg-white/20 rounded-full text-sm font-medium">
                                         v{agent.version || '0.1.0'}
                                     </span>
+                                    {(!agent.protocol || agent.protocol === 'a2a' || agent.protocol === 'hybrid') && (
+                                        <span className="px-3 py-1 bg-white/20 rounded-full text-sm font-medium">
+                                            🔌 A2A
+                                        </span>
+                                    )}
+                                    {(agent.protocol === 'mcp' || agent.protocol === 'hybrid' || mcpSseUrl) && (
+                                        <span className="px-3 py-1 bg-white/20 rounded-full text-sm font-medium">
+                                            🧩 MCP{mcpTransport ? ` (${mcpTransport})` : ''}
+                                        </span>
+                                    )}
                                     {agent.streaming && (
                                         <span className="px-3 py-1 bg-white/20 rounded-full text-sm font-medium">
                                             🚀 Streaming
@@ -173,6 +186,39 @@ const AgentDetail: React.FC = () => {
                             </div>
                         )}
 
+                        {/* MCP Details (if known or inferred) */}
+                        {(agent.protocol === 'mcp' || agent.protocol === 'hybrid' || mcpSseUrl) && (
+                            <div>
+                                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">MCP</h2>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                                        <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Transport</div>
+                                        <div className="font-bold text-gray-900 dark:text-gray-100">{mcpTransport || 'Unknown'}</div>
+                                    </div>
+                                    {mcpSseUrl && (
+                                        <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                                            <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">SSE URL</div>
+                                            <a href={mcpSseUrl} target="_blank" rel="noreferrer" className="font-bold text-blue-600 dark:text-blue-300 break-all underline">
+                                                {mcpSseUrl}
+                                            </a>
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="mt-4 flex flex-col sm:flex-row gap-3">
+                                    {mcpSseUrl && (
+                                        <a
+                                            href={`http://localhost:6274/?transport=sse&serverUrl=${encodeURIComponent(mcpSseUrl)}`}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-center transition-all duration-300"
+                                        >
+                                            🔎 Open in MCP Inspector
+                                        </a>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
                         {/* Action buttons */}
                         <div className="flex flex-col sm:flex-row gap-4 pt-8">
                             <a
@@ -197,6 +243,19 @@ const AgentDetail: React.FC = () => {
                                     <span>OpenAPI Spec</span>
                                 </span>
                             </a>
+                            {mcpSseUrl && (
+                                <a
+                                    href={`http://localhost:6274/?transport=sse&serverUrl=${encodeURIComponent(mcpSseUrl)}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex-1 px-8 py-4 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg text-center transition-all duration-300"
+                                >
+                                    <span className="flex items-center justify-center space-x-2">
+                                        <span>🧩</span>
+                                        <span>Inspect MCP</span>
+                                    </span>
+                                </a>
+                            )}
                         </div>
                     </div>
                 </div>
