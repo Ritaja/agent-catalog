@@ -101,7 +101,7 @@ graph TB
     subgraph "Sample Agents"
         TaskAgent[📋 Task Agent<br/>A2A Protocol<br/>Port 5051]
         CalendarAgent[📅 Calendar Agent<br/>A2A Protocol<br/>Port 5052]
-        FinanceAgent[💰 Finance Agent<br/>Hybrid (A2A + MCP)<br/>Ports 5053/5054]
+        FinanceAgent[💰 Finance Agent<br/>Hybrid A2A + MCP<br/>Port 5053/5054]
         MCPServer[🧩 MCP Server<br/>Tools, Resources, Prompts<br/>SSE Transport]
         AgentRunner[🔄 Agent Runner<br/>Orchestrator]
     end
